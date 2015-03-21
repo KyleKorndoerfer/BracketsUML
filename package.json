@@ -1,0 +1,12 @@
+{
+    "name": "KyleKorndoerfer.BracketsUML",
+    "title": "PlantUML editor for Brackets",
+    "description": "Allows the creation of PlantUML files with syntax highlighting and automatic image file generation",
+    "homepage": "https://github.com/KyleKorndoerfer/BracketsUML",
+    "version": "0.0.1",
+    "author": "S. Kyle Korndoerfer",
+    "license": "MIT",
+    "engines": {
+        "brackets": ">=1.2"
+    }
+}

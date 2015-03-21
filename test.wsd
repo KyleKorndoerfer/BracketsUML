@@ -1,0 +1,12 @@
+' This is a comment!
+@startuml
+
+title "Test Sequence Diagram"
+
+actor Alice
+actor Bob
+
+Alice->Bob: Hello!
+Bob-->Alice: Hola!
+
+@enduml
