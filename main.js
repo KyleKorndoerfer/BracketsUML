@@ -13,7 +13,9 @@ define(function (require, exports, module) {
         AppInit             = brackets.getModule("utils/AppInit"),
         LanguageManager     = brackets.getModule("language/LanguageManager"),
         MainViewManager     = brackets.getModule("view/MainViewManager"),
+        CodeMirror          = brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
         umlEncoder          = require("./lib/umlEncoder"),
+        plantUmlLang        = require("./lib/plantuml"),
 
         plantumlService     = "http://www.plantuml.com:80/plantuml/png/",
         BRACKETSUML_PREVIEW = "bracketsuml.preview",
@@ -31,16 +33,19 @@ define(function (require, exports, module) {
 
 
     /**
-     * Registers the PlantUML language to the 'wsd' file extension
+     * Registers the PlantUML language syntax
      */
     function registerLanguage() {
+        // create a new 'plantuml' language mode in CodeMirror
+        plantUmlLang.register(CodeMirror);
+
         // register the 'wsd' file extension/language
         // (simple for the moment; syntax highlighting coming later)
         LanguageManager.defineLanguage("plantuml", {
             name: "PlantUML Diagram",
-            mime: "text/plain",
-            mode: "null",
-            fileExtensions: ["wsd"],
+            mime: "text/x-plantuml",
+            mode: "plantuml",
+            fileExtensions: ["plantuml", "uml", "wsd"],
             lineComment: ["'"]
         });
     }// registerLanguage()
