@@ -19,7 +19,7 @@ define(function (require, exports, module) {
 
         plantumlService     = "http://www.plantuml.com:80/plantuml/png/",
         BRACKETSUML_PREVIEW = "bracketsuml.preview",
-        panelHtml           = "<div id='bracketsuml.panel'><h1>Hello</h1></div>",
+        panelTemplate       = require("text!previewPanel.html"),
         panel;
 
 
@@ -58,9 +58,10 @@ define(function (require, exports, module) {
         if (!panel.isVisible()) {
             log("Showing the preview panel");
             // TODO: refresh panel with local file content; if available
-            //panel.show();
+            panel.show();
         }
     }// showPreviewPanel()
+
 
     /** Hides the diagram preview panel if not already hidden */
     function hidePreviewPanel() {
@@ -70,15 +71,20 @@ define(function (require, exports, module) {
         }
     }//hidePreviewPanel()
 
+
     /** Updates the preview panel image based on the editor contents */
     function updatePanel(editor) {
         var text = editor.document.getText();
+		var encodedText = umlEncoder.compress(text);
+
         log("Straight text: " + text);
-        log("Encoded text: " + umlEncoder.compress(text));
+        log("Encoded text: " + encodedText);
+
         // TODO: make a call to PlantUML REST API to get an image back
         // TODO: save the image to disk (same file name, different extension
         // TODO: refresh the panel to show the latest image
     }// updatePanel(editor)
+
 
     /** Updates the diagram preview panel in response to the document being updated. */
     function handleFileSaved(jqEvent, doc) {
@@ -86,6 +92,7 @@ define(function (require, exports, module) {
         updatePanel(EditorManager.getCurrentFullEditor());
         log("File saved");
     }//handleFileSaved(jqEvent, doc)
+
 
     /** Shows/hides the diagram preview panel based on the active editor */
     function handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId) {
@@ -103,18 +110,23 @@ define(function (require, exports, module) {
         }
     }// handleCurrentEditorChange()
 
+
     /** Registers and global event listeners */
     function registerEventListeners() {
         // listen for changes to the active editor
         MainViewManager.on("currentFileChange", handleCurrentEditorChange);
     }// registerEventListeners()
 
-    AppInit.appReady(function () {
+
+	AppInit.appReady(function () {
         log("Initializing...");
         registerLanguage();
         registerEventListeners();
 
-        panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelHtml), 300);
+        panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelTemplate), 150);
+
+		// Close panel when close button is clicked.
+		panel.$panel.on('click', '.close', hidePreviewPanel);
 
         log("Initialized");
     });
