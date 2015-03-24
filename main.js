@@ -52,7 +52,7 @@ define(function (require, exports, module) {
             name: "PlantUML Diagram",
             mime: "text/x-plantuml",
             mode: "plantuml",
-            fileExtensions: ["plantuml", "uml", "wsd"],
+            fileExtensions: ["puml", "wsd"],
             lineComment: ["'"]
         });
 
