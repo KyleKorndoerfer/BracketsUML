@@ -9,9 +9,65 @@ box #lightBlue
 	database DB
 end box
 
+box
+	boundary Boundary1
+	control Control1
+	entity Entity1
+	participant Participant1
+end box
+
+hide footbox
+
+== Notes ==
+note left Alice: Left of Alice
+hnote over Alice: Over Alice
+rnote right Alice: Right of Alice
+hnote left Alice
+	A multi-
+	line note
+end note
+
+== Sequences ==
+autonumber 1
 Alice->Bob: Hello!
+activate Alice
+activate Bob
+|||
 Bob->DB: Check localization
+activate DB
+...
 DB-->Bob: Spanish
+destroy DB
 Bob-->Alice: Hola!!
+create Logger
+Alice->Logger: write log msg
+deactivate Bob
+deactivate Alice
+
+== Conditions ==
+alt Some condition
+	Alice->Bob: If
+	group My Group
+		loop loop-d-loop
+			Bob->DB: Get Data
+		end
+	end
+else some other condition
+	Alice->Bob: Else
+	critical Critical
+		Bob->Alice: something critical!
+	end
+	break conditional
+		Bob->Alice: Breaking up!
+	end
+end
+
+ref over Bob
+	A reference to something
+end ref
+
+legend center
+	some legend content
+endlegend
 
 @enduml
