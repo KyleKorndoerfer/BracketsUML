@@ -4,9 +4,14 @@
 title "Test Sequence Diagram"
 
 actor Alice
-actor Bob
+box #lightBlue
+	actor Bob
+	database DB
+end box
 
 Alice->Bob: Hello!
-Bob-->Alice: Hola!
+Bob->DB: Check localization
+DB-->Bob: Spanish
+Bob-->Alice: Hola!!
 
 @enduml
