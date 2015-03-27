@@ -103,27 +103,75 @@ define(function (require, exports, module) {
     }//hidePreviewPanel()
 
     /**
+     * Gets the full file path to the active document.
+     * @return {string} The full file path to the current document.
+     */
+    function getFullFilePath() {
+		return editor.document.file.fullPath;
+    }
+
+    /**
+     * Gets the fully encode url to the diagram.
+     * @return {string} Full service URL to generate the diagram
+     */
+    function getEncodedUrl() {
+		return plantumlService + umlEncoder.compress(editor.document.getText());
+    }
+
+    /**
+     * builds the full path to the resulting image.
+     * @return {string} The full path to the resulting image file
+     */
+    function getImageFilePath() {
+		var imageName = FileUtils.getDirectoryPath(getFullFilePath());
+		imageName += FileUtils.getFilenameWithoutExtension(editor.document.file.name);
+		imageName += ".png";
+
+		return imageName;
+    }
+
+    /**
 	 * Updates the preview panel image based on the editor contents.
-	 * @param {Editor} editor The active editor instance
 	 */
-    function updatePanel(editor) {
+    function updatePanel(filename) {
 		log("BEGIN: updatePanel(editor)");
 
-		if (editor && editor.document) {
-			var encodedText = umlEncoder.compress(editor.document.getText());
-			log("Encoded text: " + encodedText);
+		$("img", panel.$panel).attr("src", filename);
+		showPreviewPanel();
 
-			// TODO: save the image to disk (same file name, different extension
-			$("img", panel.$panel).attr("src", plantumlService + encodedText);
-
-			showPreviewPanel();
-		}
-
-		log("END: updatePanel(editor)");
-    }// updatePanel(editor)
+		log("END: updatePanel()");
+    }// updatePanel()
 
 
     /**
+	 * Refreshes the image generated from the text in the editor.
+	 * @param {Object} jqEvent The jQuery event object.
+	 */
+	function refreshDiagram(jqEvent) {
+		log("BEGIN: refreshDiagram()");
+
+		// build the file path
+		var encodedUrl = getEncodedUrl(),
+			filename = FileUtils.convertToNativePath(getImageFilePath());
+
+
+		Diagram.exec("save", encodedUrl, filename, PrefsManager.get("proxy"))
+			.done(function () {
+				log("Diagram successfully saved");
+
+				// FIXME: Replace with a filesystem watcher?
+				setTimeout(function () {
+					updatePanel(filename);
+				}, 1500);
+			}).fail(function (err) {
+				logError("Diagram was not saved properly: " + err);
+			});
+
+		log("END: refreshDiagram()");
+	}// refreshDiagram(jqEvent)
+
+
+	/**
 	 * Updates the diagram preview panel in response to the document being updated.
 	 * @param {Object} jqEvent The jQuery event object.
 	 * @param {Document} doc The active document.
@@ -131,16 +179,11 @@ define(function (require, exports, module) {
     function handleFileSaved(jqEvent, doc) {
 		log("BEGIN: handleFileSaved(jqEvent, doc)");
 
-		//var currentEditor = EditorManager.getCurrentFullEditor();
-        //console.assert(currentEditor && currentEditor.document === doc);
-        //updatePanel(currentEditor);
-
 		console.assert(editor && editor.document === doc);
-		updatePanel(editor);
+		refreshDiagram();
 
 		log("END: handleFileSaved(jqEvent, doc)");
     }//handleFileSaved(jqEvent, doc)
-
 
     /**
 	 * Handles the active document being changed by showing/hiding the diagram
@@ -159,7 +202,7 @@ define(function (require, exports, module) {
             if (newEditor.document.getLanguage().getId() === "plantuml") {
                 DocumentManager.on("documentSaved", handleFileSaved);
 				editor = newEditor;
-                updatePanel();
+                showPreviewPanel();
             } else {
                 DocumentManager.off("documentSaved", handleFileSaved);
 				editor = null;
@@ -172,33 +215,6 @@ define(function (require, exports, module) {
 		log("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
     }// handleCurrentEditorChange()
 
-	/**
-	 * Saves the image generated from the text in the editor.
-	 * @param {Object} jqEvent The jQuery event object.
-	 */
-	function saveDiagram(jqEvent) {
-		log("BEGIN: saveDiagram()");
-
-		var fullPath = editor.document.file.fullPath,
-			encodedText = umlEncoder.compress(editor.document.getText()),
-			fullUrl = plantumlService + encodedText,
-			filename;
-
-		// build the file path
-		filename = FileUtils.getDirectoryPath(fullPath);
-		filename += FileUtils.getFilenameWithoutExtension(editor.document.file.name);
-		filename += ".png";
-
-		Diagram.exec("save", fullUrl, FileUtils.convertToNativePath(filename), PrefsManager.get("proxy"))
-			.done(function () {
-				log("Diagram successfully saved");
-			}).fail(function (err) {
-				logError("Diagram was not saved properly: " + err);
-			});
-
-		log("END: saveDiagram()");
-	}// saveDiagram(jqEvent)
-
     /**
 	 * Registers and global event listeners
 	 */
@@ -210,8 +226,8 @@ define(function (require, exports, module) {
 
 		// Close panel when close button is clicked.
 		panel.$panel.on('click', '.close', hidePreviewPanel);
-		// Save file when save button clicked
-		panel.$panel.on('click', '.save', saveDiagram);
+		// Refresh file when 'refresh' button clicked
+		panel.$panel.on('click', '.refresh', refreshDiagram);
 
 		log("END: registerEventListeners()");
     }// registerEventListeners()

@@ -1,0 +1,2 @@
+# ignore images in diagrams folder
+diagrams/*.png
