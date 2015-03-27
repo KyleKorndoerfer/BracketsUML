@@ -19,6 +19,7 @@ end box
 hide footbox
 
 == Notes ==
+note over Alice,Bob #orange: This is a test!
 note left Alice: Left of Alice
 hnote over Alice: Over Alice
 rnote right Alice: Right of Alice
