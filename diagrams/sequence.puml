@@ -1,4 +1,8 @@
-' This is a comment!
+' This is an inline a comment!
+
+/' Multi line
+comment '/
+
 @startuml
 
 title "Test Sequence Diagram"
@@ -18,6 +22,67 @@ end box
 
 hide footbox
 
+== Arrows ==
+Alice -> Bob
+Alice <- Bob
+
+Alice --> Bob
+Alice <-- Bob
+
+Alice ->x Bob
+Alice x<- Bob
+
+Alice -->x Bob
+Alice x<-- Bob
+
+Alice ->> Bob
+Alice <<- Bob
+
+Alice -->> Bob
+Alice <<-- Bob
+
+Alice -\ Bob
+Alice \- Bob
+
+Alice --\ Bob
+Alice \-- Bob
+
+Alice -\\ Bob
+Alice \\- Bob
+
+Alice --\\ Bob
+Alice \\-- Bob
+
+Alice -/ Bob
+Alice /- Bob
+
+Alice --/ Bob
+Alice /-- Bob
+
+Alice -// Bob
+Alice //- Bob
+
+Alice --// Bob
+Alice //-- Bob
+
+Alice ->o Bob
+Alice o<- Bob
+
+Alice -->o Bob
+Alice o<-- Bob
+
+Alice <-> Bob
+Alice <--> Bob
+
+Alice o<-> Bob
+Alice <->o Bob
+Alice o<->o Bob
+
+Alice o<--> Bob
+Alice <-->o Bob
+Alice o<-->o Bob
+
+
 == Notes ==
 note over Alice,Bob #orange: This is a test!
 note left Alice: Left of Alice
@@ -30,36 +95,36 @@ end note
 
 == Sequences ==
 autonumber 1
-Alice->Bob: Hello!
+Alice -> Bob: Hello!
 activate Alice
 activate Bob
-|||
-Bob->DB: Check localization
+|||  'inline comment
+Bob -> DB: Check localization
 activate DB
 ...
-DB-->Bob: Spanish
+DB --> Bob: Spanish
 destroy DB
-Bob-->Alice: Hola!!
+Bob --> Alice: Hola!
 create Logger
-Alice->Logger: write log msg
+Alice -> Logger: write log msg
 deactivate Bob
 deactivate Alice
 
 == Conditions ==
 alt Some condition
-	Alice->Bob: If
+	Alice -> Bob: If
 	group My Group
 		loop loop-d-loop
-			Bob->DB: Get Data
+			Bob -> DB: Get Data
 		end
 	end
 else some other condition
-	Alice->Bob: Else
+	Alice -> Bob: Else
 	critical Critical
-		Bob->Alice: something critical!
+		Bob -> Alice: something critical!
 	end
 	break conditional
-		Bob->Alice: Breaking up!
+		Bob -> Alice: Breaking up!
 	end
 end
 

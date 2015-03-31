@@ -162,7 +162,7 @@ define(function (require, exports, module) {
 				// FIXME: Replace with a filesystem watcher?
 				setTimeout(function () {
 					updatePanel(filename);
-				}, 1500);
+				}, 3000);
 			}).fail(function (err) {
 				logError("Diagram was not saved properly: " + err);
 			});
@@ -243,7 +243,8 @@ define(function (require, exports, module) {
         panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelTemplate), 150);
 		registerEventListeners();
 
-		// FUTURE: Add icon to the toolbar on the right?
+		// FUTURE: Add toolbar icon to show/hide panel?
+		// FUTURE: Add menu item to show/hide panel?
 
         log("Initialized");
     });
