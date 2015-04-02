@@ -9,25 +9,28 @@ define(function (require, exports, module) {
 
     var DEBUG				= true,
 
-		DocumentManager     = brackets.getModule("document/DocumentManager"),
+		AppInit             = brackets.getModule("utils/AppInit"),
+        CodeMirror          = brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
+        CommandManager      = brackets.getModule("command/CommandManager"),
+        DocumentManager     = brackets.getModule("document/DocumentManager"),
         EditorManager       = brackets.getModule("editor/EditorManager"),
-        WorkspaceManager    = brackets.getModule("view/WorkspaceManager"),
         ExtensionUtils      = brackets.getModule("utils/ExtensionUtils"),
         FileUtils           = brackets.getModule("file/FileUtils"),
-        AppInit             = brackets.getModule("utils/AppInit"),
         LanguageManager     = brackets.getModule("language/LanguageManager"),
         MainViewManager     = brackets.getModule("view/MainViewManager"),
-        CodeMirror          = brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
+        Menus               = brackets.getModule("command/Menus"),
 		NodeDomain			= brackets.getModule("utils/NodeDomain"),
 		PrefsManager		= brackets.getModule("preferences/PreferencesManager"),
+        WorkspaceManager    = brackets.getModule("view/WorkspaceManager"),
 
 		Diagram				= new NodeDomain("saveDiagram", ExtensionUtils.getModulePath(module, "node/saveDiagram")),
 
-        umlEncoder          = require("./lib/umlEncoder"),
         plantUmlLang        = require("./lib/plantuml"),
 		panelTemplate       = require("text!previewPanel.html"),
+        umlEncoder          = require("./lib/umlEncoder"),
 
         plantumlService     = "http://www.plantuml.com/plantuml/png/",
+        BRACKETSUML_COMMAND = "bracketsuml.command",
         BRACKETSUML_PREVIEW = "bracketsuml.preview",
         panel,
 		editor;
@@ -84,6 +87,7 @@ define(function (require, exports, module) {
         if (!panel.isVisible()) {
             log("Showing the preview panel");
             panel.show();
+            CommandManager.get(BRACKETSUML_COMMAND).setChecked(true);
         }
 
 		log("END: showPreviewPanel()");
@@ -98,6 +102,7 @@ define(function (require, exports, module) {
         if (panel.isVisible()) {
             log("Hiding the preview panel");
             panel.hide();
+            CommandManager.get(BRACKETSUML_COMMAND).setChecked(false);
         }
 
 		log("END: hidePreviewPanel()");
@@ -187,6 +192,31 @@ define(function (require, exports, module) {
     }//handleFileSaved(jqEvent, doc)
 
     /**
+     * Handles the user clicking on the menu item to show/hide the preview panel.
+     */
+    function handleShowHideCommand() {
+        if (panel.isVisible()) {
+            hidePreviewPanel();
+        } else {
+            showPreviewPanel();
+        }
+    }// handleShowHideCommand()
+
+    /**
+     * Registers a View menu command to show/hide the preview panel.
+     */
+    function registerMenuCommand() {
+        Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
+    }// registerMenuCommand()
+
+    /**
+     * Removes the show/hide preview panel menu command from the View menu.
+     */
+    function removeMenuCommand() {
+        Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).removeMenuItem(BRACKETSUML_COMMAND);
+    }// removeMenuCommand()
+
+    /**
 	 * Handles the active document being changed by showing/hiding the diagram
 	 * preview panel based on language in the active editor.
 	 * @param {Object} jqEvent The jQuery event object.
@@ -203,10 +233,12 @@ define(function (require, exports, module) {
             if (newEditor.document.getLanguage().getId() === "plantuml") {
                 DocumentManager.on("documentSaved", handleFileSaved);
 				editor = newEditor;
+                registerMenuCommand();
                 showPreviewPanel();
             } else {
                 DocumentManager.off("documentSaved", handleFileSaved);
 				editor = null;
+                removeMenuCommand();
                 hidePreviewPanel();
             }
         } else {
@@ -233,7 +265,6 @@ define(function (require, exports, module) {
 		log("END: registerEventListeners()");
     }// registerEventListeners()
 
-
 	/**
 	 * Initializes the extension.
 	 */
@@ -243,9 +274,9 @@ define(function (require, exports, module) {
 		registerLanguage();
         panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelTemplate), 150);
 		registerEventListeners();
+        CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
 
 		// FUTURE: Add toolbar icon to show/hide panel?
-		// FUTURE: Add menu item to show/hide panel?
 
         log("Initialized");
     });
