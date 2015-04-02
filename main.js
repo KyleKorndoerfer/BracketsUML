@@ -48,6 +48,7 @@ define(function (require, exports, module) {
 	 * @param {string} msg The message to log to the error console.
 	  */
 	function logError(msg) {
+        console.error("[BracketsUML] " + msg);
 	}// logError(msg)
 
 

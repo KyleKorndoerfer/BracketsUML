@@ -23,7 +23,7 @@
 		var fStream = fs.createWriteStream(filename),
 			options;
 
-		if (proxy === undefined) {
+		if (proxy === null) {
 			options = url;
 		} else {
 			var parsedUrl = URL.parse(proxy);

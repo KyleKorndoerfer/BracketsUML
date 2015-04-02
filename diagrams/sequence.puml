@@ -98,7 +98,7 @@ autonumber 1
 Alice -> Bob: Hello!
 activate Alice
 activate Bob
-|||  'inline comment
+|||
 Bob -> DB: Check localization
 activate DB
 ...
