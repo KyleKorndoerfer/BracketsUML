@@ -142,7 +142,7 @@ define(function (require, exports, module) {
     function updatePanel(filename) {
 		log("BEGIN: updatePanel(editor)");
 
-		$("img", panel.$panel).attr("src", filename);
+		$("img", panel.$panel).attr("src", filename + "?d=" + Date.now());
 		showPreviewPanel();
 
 		log("END: updatePanel()");
@@ -165,10 +165,7 @@ define(function (require, exports, module) {
 			.done(function () {
 				log("Diagram successfully saved");
 
-				// FIXME: Replace with a filesystem watcher?
-				setTimeout(function () {
-					updatePanel(filename);
-				}, 3000);
+				updatePanel(filename);
 			}).fail(function (err) {
 				logError("Diagram was not saved properly: " + err);
 			});

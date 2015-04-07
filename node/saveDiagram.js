@@ -17,9 +17,10 @@
 	 * Handler function for the saveDiagram command.
 	 * @param {string} url The encoded url for the diagram on the server.
 	 * @param {string} filename The full path to save the file to.
-	 * @param {string} proxy The proxy server to use (optional)
+	 * @param {string} proxy The proxy server to use (can be null).
+	 * @param {function} the callback function invoked when done processing.
 	 */
-	function cmdSaveDiagram(url, filename, proxy) {
+	function cmdSaveDiagram(url, filename, proxy, callback) {
 		var fStream = fs.createWriteStream(filename),
 			options;
 
@@ -32,8 +33,17 @@
 
 		http.get(options, function (response) {
 			response.pipe(fStream);
+			fStream.on('finish', function() {
+				// nothing to report; successfully processed the file
+				callback(null, null);
+			});
+			fStream.on('error', function () {
+				// report an error occured saving the file. Is there an err obj?
+				callback('There was an error writing the file to disk', null);
+			});
 		}).on('error', function (err) {
-			console.log("Got error: " + err.message);
+			// report the HTTP error
+			callback(err, null);
 		});
 	}
 
@@ -50,7 +60,7 @@
 			"saveDiagram",		// domain name
 			"save",				// command name
 			cmdSaveDiagram,		// command helper function
-			false,				// this command is synchronous in Node
+			true,				// performs an asynchronous action in Node
 			"Fetches the rendered diagram from the server and saves it to disk",
 			// paramters
 			[{name: "url", type: "string", description: "The URL of the image to fetch" },
