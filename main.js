@@ -205,18 +205,20 @@ define(function (require, exports, module) {
 	}// handleShowHideCommand()
 
 	/**
-	 * Registers a View menu command to show/hide the preview panel.
+	 * Enables the 'Preview' menu command for showing/hiding the preview panel.
 	 */
-	function registerMenuCommand() {
-		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
-	}// registerMenuCommand()
+	function enableMenuCommand() {
+		CommandManager.get(BRACKETSUML_COMMAND).setEnabled(true);
+	}// enableMenuCommand()
 
 	/**
-	 * Removes the show/hide preview panel menu command from the View menu.
+	 * Disables the  'Preview' menu command for showing/hiding the preview panel.
 	 */
-	function removeMenuCommand() {
-		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).removeMenuItem(BRACKETSUML_COMMAND);
-	}// removeMenuCommand()
+	function disableMenuCommand() {
+		if (CommandManager.get(BRACKETSUML_COMMAND) !== undefined) {
+			CommandManager.get(BRACKETSUML_COMMAND).setEnabled(false);
+		}
+	}// disableMenuCommand()
 
 	/**
 	 * Handles the active document being changed by showing/hiding the diagram
@@ -235,15 +237,16 @@ define(function (require, exports, module) {
 			if (newEditor.document.getLanguage().getId() === "plantuml") {
 				DocumentManager.on("documentSaved", handleFileSaved);
 				editor = newEditor;
-				registerMenuCommand();
+				enableMenuCommand();
 				showPreviewPanel();
 			} else {
 				DocumentManager.off("documentSaved", handleFileSaved);
 				editor = null;
-				removeMenuCommand();
+				disableMenuCommand();
 				hidePreviewPanel();
 			}
 		} else {
+			disableMenuCommand();
 			hidePreviewPanel();
 		}
 
@@ -287,7 +290,9 @@ define(function (require, exports, module) {
 		registerLanguage();
 		initPreviewPanel();
 		registerEventListeners();
+		// Add preview menu item
 		CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
+		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
 
 		// FUTURE: Add toolbar icon to show/hide panel?
 
