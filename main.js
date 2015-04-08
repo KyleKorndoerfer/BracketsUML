@@ -5,156 +5,159 @@
  * Extension that adds support for generating PlantUML diagrams.
  */
 define(function (require, exports, module) {
-    "use strict";
+	"use strict";
 
-    var DEBUG				= true,
+	var DEBUG				= true,
 
-		AppInit             = brackets.getModule("utils/AppInit"),
-        CodeMirror          = brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
-        CommandManager      = brackets.getModule("command/CommandManager"),
-        DocumentManager     = brackets.getModule("document/DocumentManager"),
-        EditorManager       = brackets.getModule("editor/EditorManager"),
-        ExtensionUtils      = brackets.getModule("utils/ExtensionUtils"),
-        FileUtils           = brackets.getModule("file/FileUtils"),
-        LanguageManager     = brackets.getModule("language/LanguageManager"),
-        MainViewManager     = brackets.getModule("view/MainViewManager"),
-        Menus               = brackets.getModule("command/Menus"),
+		AppInit				= brackets.getModule("utils/AppInit"),
+		CodeMirror			= brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
+		CommandManager		= brackets.getModule("command/CommandManager"),
+		DocumentManager		= brackets.getModule("document/DocumentManager"),
+		EditorManager		= brackets.getModule("editor/EditorManager"),
+		ExtensionUtils		= brackets.getModule("utils/ExtensionUtils"),
+		FileUtils			= brackets.getModule("file/FileUtils"),
+		LanguageManager		= brackets.getModule("language/LanguageManager"),
+		MainViewManager		= brackets.getModule("view/MainViewManager"),
+		Menus				= brackets.getModule("command/Menus"),
 		NodeDomain			= brackets.getModule("utils/NodeDomain"),
 		PrefsManager		= brackets.getModule("preferences/PreferencesManager"),
-        WorkspaceManager    = brackets.getModule("view/WorkspaceManager"),
+		WorkspaceManager	= brackets.getModule("view/WorkspaceManager"),
 
 		Diagram				= new NodeDomain("saveDiagram", ExtensionUtils.getModulePath(module, "node/saveDiagram")),
 
-        plantUmlLang        = require("./lib/plantuml"),
-		panelTemplate       = require("text!previewPanel.html"),
-        umlEncoder          = require("./lib/umlEncoder"),
+		plantUmlLang		= require("./lib/plantuml"),
+		panelTemplate		= require("text!previewPanel.html"),
+		umlEncoder			= require("./lib/umlEncoder"),
+		loadingImageUrl		= require.toUrl('./images/loading-gray.gif'),
 
-        plantumlService     = "http://www.plantuml.com/plantuml/png/",
-        BRACKETSUML_COMMAND = "bracketsuml.command",
-        BRACKETSUML_PREVIEW = "bracketsuml.preview",
-        panel,
+		plantumlService		= "http://www.plantuml.com/plantuml/png/",
+		BRACKETSUML_COMMAND	= "bracketsuml.command",
+		BRACKETSUML_PREVIEW	= "bracketsuml.preview",
+		loadingImage,
+		panel,
 		editor;
 
 
-    /**
-     * Logging with a little extra flair (ala Chrome)
-     * @param {string} msg The title of the book.
-     */
-    function log(msg) {
+	/**
+	 * Logging with a little extra flair (ala Chrome)
+	 * @param {string} msg The title of the book.
+	 */
+	function log(msg) {
 		if (DEBUG) {
 			console.log("%c[BracketsUML] " + msg, "color:blue");
 		}
-    }// log(msg)
+	}// log(msg)
 
 	/**
 	 * Logs the message to the error console.
 	 * @param {string} msg The message to log to the error console.
 	  */
 	function logError(msg) {
-        console.error("[BracketsUML] " + msg);
+		console.error("[BracketsUML] " + msg);
 	}// logError(msg)
 
 
-    /**
-     * Registers the PlantUML language syntax
-     */
-    function registerLanguage() {
+	/**
+	 * Registers the PlantUML language syntax
+	 */
+	function registerLanguage() {
 		log("BEGIN: registerLanguage()");
 
-        // create a new 'plantuml' language mode in CodeMirror
-        plantUmlLang.register(CodeMirror);
+		// create a new 'plantuml' language mode in CodeMirror
+		plantUmlLang.register(CodeMirror);
 
-        // register the 'wsd' file extension/language
-        // (simple for the moment; syntax highlighting coming later)
-        LanguageManager.defineLanguage("plantuml", {
-            name: "PlantUML Diagram",
-            mime: "text/x-plantuml",
-            mode: "plantuml",
-            fileExtensions: ["puml", "wsd"],
-            lineComment: ["'"]
-        });
+		// register the 'wsd' file extension/language
+		// (simple for the moment; syntax highlighting coming later)
+		LanguageManager.defineLanguage("plantuml", {
+			name: "PlantUML Diagram",
+			mime: "text/x-plantuml",
+			mode: "plantuml",
+			fileExtensions: ["puml", "wsd"],
+			lineComment: ["'"]
+		});
 
 		log("END: registerLanguage()");
-    }// registerLanguage()
+	}// registerLanguage()
 
 
-    /**
-     * Shows the diagram preview panel if not already shown
-     */
-    function showPreviewPanel() {
+	/**
+	 * Shows the diagram preview panel if not already shown
+	 */
+	function showPreviewPanel() {
 		log("BEGIN: showPreviewPanel()");
 
-        if (!panel.isVisible()) {
-            log("Showing the preview panel");
-            panel.show();
-            CommandManager.get(BRACKETSUML_COMMAND).setChecked(true);
-        }
+		if (!panel.isVisible()) {
+			log("Showing the preview panel");
+			panel.show();
+			CommandManager.get(BRACKETSUML_COMMAND).setChecked(true);
+		}
 
 		log("END: showPreviewPanel()");
-    }// showPreviewPanel()
+	}// showPreviewPanel()
 
-    /**
+	/**
 	 * Hides the diagram preview panel if not already hidden.
 	 */
-    function hidePreviewPanel() {
+	function hidePreviewPanel() {
 		log("BEGIN: hidePreviewPanel()");
 
-        if (panel.isVisible()) {
-            log("Hiding the preview panel");
-            panel.hide();
-            CommandManager.get(BRACKETSUML_COMMAND).setChecked(false);
-        }
+		if (panel.isVisible()) {
+			log("Hiding the preview panel");
+			panel.hide();
+			CommandManager.get(BRACKETSUML_COMMAND).setChecked(false);
+		}
 
 		log("END: hidePreviewPanel()");
-    }//hidePreviewPanel()
+	}//hidePreviewPanel()
 
-    /**
-     * Gets the full file path to the active document.
-     * @return {string} The full file path to the current document.
-     */
-    function getFullFilePath() {
+	/**
+	 * Gets the full file path to the active document.
+	 * @return {string} The full file path to the current document.
+	 */
+	function getFullFilePath() {
 		return editor.document.file.fullPath;
-    }
+	}
 
-    /**
-     * Gets the fully encode url to the diagram.
-     * @return {string} Full service URL to generate the diagram
-     */
-    function getEncodedUrl() {
+	/**
+	 * Gets the fully encode url to the diagram.
+	 * @return {string} Full service URL to generate the diagram
+	 */
+	function getEncodedUrl() {
 		return plantumlService + umlEncoder.compress(editor.document.getText());
-    }
+	}
 
-    /**
-     * builds the full path to the resulting image.
-     * @return {string} The full path to the resulting image file
-     */
-    function getImageFilePath() {
+	/**
+	 * builds the full path to the resulting image.
+	 * @return {string} The full path to the resulting image file
+	 */
+	function getImageFilePath() {
 		var imageName = FileUtils.getDirectoryPath(getFullFilePath());
 		imageName += FileUtils.getFilenameWithoutExtension(editor.document.file.name);
 		imageName += ".png";
 
 		return imageName;
-    }
+	}
 
-    /**
+	/**
 	 * Updates the preview panel image based on the editor contents.
 	 */
-    function updatePanel(filename) {
+	function updatePanel(filename) {
 		log("BEGIN: updatePanel(editor)");
 
-		$("img", panel.$panel).attr("src", filename + "?d=" + Date.now());
+		$("img.preview", panel.$panel).attr("src", filename + "?d=" + Date.now());
 		showPreviewPanel();
 
 		log("END: updatePanel()");
-    }// updatePanel()
+	}// updatePanel()
 
 
-    /**
+	/**
 	 * Refreshes the image generated from the text in the editor.
 	 * @param {Object} jqEvent The jQuery event object.
 	 */
 	function refreshDiagram(jqEvent) {
 		log("BEGIN: refreshDiagram()");
+		loadingImage.show();
 
 		// build the file path
 		var encodedUrl = getEncodedUrl(),
@@ -166,8 +169,10 @@ define(function (require, exports, module) {
 				log("Diagram successfully saved");
 
 				updatePanel(filename);
+				loadingImage.hide();
 			}).fail(function (err) {
 				logError("Diagram was not saved properly: " + err);
+				loadingImage.hide();
 			});
 
 		log("END: refreshDiagram()");
@@ -179,41 +184,41 @@ define(function (require, exports, module) {
 	 * @param {Object} jqEvent The jQuery event object.
 	 * @param {Document} doc The active document.
 	 */
-    function handleFileSaved(jqEvent, doc) {
+	function handleFileSaved(jqEvent, doc) {
 		log("BEGIN: handleFileSaved(jqEvent, doc)");
 
 		console.assert(editor && editor.document === doc);
 		refreshDiagram();
 
 		log("END: handleFileSaved(jqEvent, doc)");
-    }//handleFileSaved(jqEvent, doc)
+	}//handleFileSaved(jqEvent, doc)
 
-    /**
-     * Handles the user clicking on the menu item to show/hide the preview panel.
-     */
-    function handleShowHideCommand() {
-        if (panel.isVisible()) {
-            hidePreviewPanel();
-        } else {
-            showPreviewPanel();
-        }
-    }// handleShowHideCommand()
+	/**
+	 * Handles the user clicking on the menu item to show/hide the preview panel.
+	 */
+	function handleShowHideCommand() {
+		if (panel.isVisible()) {
+			hidePreviewPanel();
+		} else {
+			showPreviewPanel();
+		}
+	}// handleShowHideCommand()
 
-    /**
-     * Registers a View menu command to show/hide the preview panel.
-     */
-    function registerMenuCommand() {
-        Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
-    }// registerMenuCommand()
+	/**
+	 * Registers a View menu command to show/hide the preview panel.
+	 */
+	function registerMenuCommand() {
+		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
+	}// registerMenuCommand()
 
-    /**
-     * Removes the show/hide preview panel menu command from the View menu.
-     */
-    function removeMenuCommand() {
-        Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).removeMenuItem(BRACKETSUML_COMMAND);
-    }// removeMenuCommand()
+	/**
+	 * Removes the show/hide preview panel menu command from the View menu.
+	 */
+	function removeMenuCommand() {
+		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).removeMenuItem(BRACKETSUML_COMMAND);
+	}// removeMenuCommand()
 
-    /**
+	/**
 	 * Handles the active document being changed by showing/hiding the diagram
 	 * preview panel based on language in the active editor.
 	 * @param {Object} jqEvent The jQuery event object.
@@ -222,37 +227,37 @@ define(function (require, exports, module) {
 	 * @param {File} oldFile
 	 * @param {string} oldPaneId
 	 */
-    function handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId) {
+	function handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId) {
 		log("BEGIN: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
 
-        var newEditor = EditorManager.getCurrentFullEditor();
-        if (newEditor) {
-            if (newEditor.document.getLanguage().getId() === "plantuml") {
-                DocumentManager.on("documentSaved", handleFileSaved);
+		var newEditor = EditorManager.getCurrentFullEditor();
+		if (newEditor) {
+			if (newEditor.document.getLanguage().getId() === "plantuml") {
+				DocumentManager.on("documentSaved", handleFileSaved);
 				editor = newEditor;
-                registerMenuCommand();
-                showPreviewPanel();
-            } else {
-                DocumentManager.off("documentSaved", handleFileSaved);
+				registerMenuCommand();
+				showPreviewPanel();
+			} else {
+				DocumentManager.off("documentSaved", handleFileSaved);
 				editor = null;
-                removeMenuCommand();
-                hidePreviewPanel();
-            }
-        } else {
-            hidePreviewPanel();
-        }
+				removeMenuCommand();
+				hidePreviewPanel();
+			}
+		} else {
+			hidePreviewPanel();
+		}
 
 		log("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
-    }// handleCurrentEditorChange()
+	}// handleCurrentEditorChange()
 
-    /**
+	/**
 	 * Registers and global event listeners
 	 */
-    function registerEventListeners() {
+	function registerEventListeners() {
 		log("BEGIN: registerEventListeners()");
 
-        // listen for changes to the active editor
-        MainViewManager.on("currentFileChange", handleCurrentEditorChange);
+		// listen for changes to the active editor
+		MainViewManager.on("currentFileChange", handleCurrentEditorChange);
 
 		// Close panel when close button is clicked.
 		panel.$panel.on('click', '.close', hidePreviewPanel);
@@ -260,21 +265,32 @@ define(function (require, exports, module) {
 		panel.$panel.on('click', '.refresh', refreshDiagram);
 
 		log("END: registerEventListeners()");
-    }// registerEventListeners()
+	}// registerEventListeners()
+
+	/**
+	 * Initializes the preview panel
+	 */
+	function initPreviewPanel() {
+		panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelTemplate), 150);
+
+		loadingImage = $("img.loading", panel.$panel);
+		loadingImage.attr('src', loadingImageUrl);
+		loadingImage.hide();
+	}// initPreviewPanel()
 
 	/**
 	 * Initializes the extension.
 	 */
 	AppInit.appReady(function () {
-        log("Initializing...");
+		log("Initializing...");
 
 		registerLanguage();
-        panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelTemplate), 150);
+		initPreviewPanel();
 		registerEventListeners();
-        CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
+		CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
 
 		// FUTURE: Add toolbar icon to show/hide panel?
 
-        log("Initialized");
-    });
+		log("Initialized");
+	});
 });

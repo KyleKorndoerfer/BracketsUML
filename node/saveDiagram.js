@@ -33,7 +33,7 @@
 
 		http.get(options, function (response) {
 			response.pipe(fStream);
-			fStream.on('finish', function() {
+			fStream.on('finish', function () {
 				// nothing to report; successfully processed the file
 				callback(null, null);
 			});
