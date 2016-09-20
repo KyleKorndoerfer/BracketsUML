@@ -13,7 +13,7 @@ recent to oldest).
 - None
 
 ### Fixed
-- Corrected `name` property in `package.json` to have proper casing
+- [Issue #13](https://github.com/KyleKorndoerfer/BracketsUML/issues/13) - corrected the installation issues when attempting to install the extension
 
 ### Removed
 - None
