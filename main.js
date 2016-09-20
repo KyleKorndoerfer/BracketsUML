@@ -187,7 +187,7 @@ define(function (require, exports, module) {
 		var encodedUrl = getEncodedUrl(),
 			filename = FileUtils.convertToNativePath(getImageFilePath());
 
-
+		log("ENCODED URL: " + encodedUrl);
 		Diagram.exec("save", encodedUrl, filename, PrefsManager.get("proxy"))
 			.done(function () {
 				log("Diagram successfully saved");

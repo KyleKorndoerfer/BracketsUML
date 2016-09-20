@@ -1,11 +1,25 @@
 {
-    "name": "KyleKorndoerfer.BracketsUML",
+    "name": "kyle-korndoerfer.brackets-uml",
     "title": "PlantUML editor for Brackets",
+	"version": "1.1.0",
     "description": "Allows the creation of PlantUML files with syntax highlighting and automatic image file generation",
+	"keywords": [
+		"plantuml",
+		"uml",
+		"diagram",
+		"sequence"
+	],
     "homepage": "https://github.com/KyleKorndoerfer/BracketsUML",
-    "version": "1.0",
-    "author": "S. Kyle Korndoerfer",
-    "license": "MIT",
+	"bugs": "https://github.com/KyleKorndoerfer/BracketsUML/Issues",
+	"license": "MIT",
+    "author": {
+		"name": "S. Kyle Korndoerfer",
+		"url": "https://github.com/KyleKorndoerfer"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/KyleKorndoerfer/BracketsUML.git"
+	},
     "engines": {
         "brackets": ">=1.2.0"
     }
