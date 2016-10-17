@@ -3,6 +3,21 @@
 Running list of all notable changes to `BraketsUML` will be listed here (most
 recent to oldest).
 
+## 1.1.1 - 2016-10-16
+
+### Added
+- [Issue #11](https://github.com/KyleKorndoerfer/BracketsUML/issues/11) - Added syntax highlighting for colored arrows.
+
+### Deprecated
+- None
+
+### Fixed
+- None
+
+### - Removed
+- None
+
+
 ## 1.1.0 - 2016-09-20
 
 ### Added
@@ -17,6 +32,7 @@ recent to oldest).
 
 ### Removed
 - None
+
 
 ## 1.0.0 - 2015-04-07
 

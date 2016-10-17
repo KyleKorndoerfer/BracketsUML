@@ -82,6 +82,8 @@ Alice o<--> Bob
 Alice <-->o Bob
 Alice o<-->o Bob
 
+Alice -[#red]-> Bob
+Bob -[#0000FF]-> Alice
 
 == Notes ==
 note over Alice,Bob #orange: This is a test!
