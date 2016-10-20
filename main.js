@@ -1,8 +1,8 @@
-/* 
+/*
  * The MIT License (MIT)
  *
  * Copyright (c) 2015 - 2016 S. Kyle Korndoerfer
- * 
+ *
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
  * in the Software without restriction, including without limitation the rights
@@ -31,32 +31,36 @@
 define(function (require, exports, module) {
 	"use strict";
 
-	var DEBUG				= true,
+	var
+		AppInit					= brackets.getModule("utils/AppInit"),
+		CodeMirror				= brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
+		CommandManager			= brackets.getModule("command/CommandManager"),
+		DocumentManager			= brackets.getModule("document/DocumentManager"),
+		EditorManager			= brackets.getModule("editor/EditorManager"),
+		ExtensionUtils			= brackets.getModule("utils/ExtensionUtils"),
+		FileUtils				= brackets.getModule("file/FileUtils"),
+		LanguageManager			= brackets.getModule("language/LanguageManager"),
+		MainViewManager			= brackets.getModule("view/MainViewManager"),
+		Menus					= brackets.getModule("command/Menus"),
+		NodeDomain				= brackets.getModule("utils/NodeDomain"),
+		PrefsManager			= brackets.getModule("preferences/PreferencesManager"),
+		WorkspaceManager		= brackets.getModule("view/WorkspaceManager"),
 
-		AppInit				= brackets.getModule("utils/AppInit"),
-		CodeMirror			= brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
-		CommandManager		= brackets.getModule("command/CommandManager"),
-		DocumentManager		= brackets.getModule("document/DocumentManager"),
-		EditorManager		= brackets.getModule("editor/EditorManager"),
-		ExtensionUtils		= brackets.getModule("utils/ExtensionUtils"),
-		FileUtils			= brackets.getModule("file/FileUtils"),
-		LanguageManager		= brackets.getModule("language/LanguageManager"),
-		MainViewManager		= brackets.getModule("view/MainViewManager"),
-		Menus				= brackets.getModule("command/Menus"),
-		NodeDomain			= brackets.getModule("utils/NodeDomain"),
-		PrefsManager		= brackets.getModule("preferences/PreferencesManager"),
-		WorkspaceManager	= brackets.getModule("view/WorkspaceManager"),
+		Diagram					= new NodeDomain("saveDiagram", ExtensionUtils.getModulePath(module, "node/saveDiagram")),
 
-		Diagram				= new NodeDomain("saveDiagram", ExtensionUtils.getModulePath(module, "node/saveDiagram")),
+		plantUmlLang			= require("./lib/plantuml"),
+		panelTemplate			= require("text!previewPanel.html"),
+		umlEncoder				= require("./lib/umlEncoder"),
+		loadingImageUrl			= require.toUrl('./images/loading-gray.gif'),
+		_prefs					= PrefsManager.getExtensionPrefs("bracketsuml"),
 
-		plantUmlLang		= require("./lib/plantuml"),
-		panelTemplate		= require("text!previewPanel.html"),
-		umlEncoder			= require("./lib/umlEncoder"),
-		loadingImageUrl		= require.toUrl('./images/loading-gray.gif'),
-
-		plantumlService		= "http://www.plantuml.com/plantuml/png/",
-		BRACKETSUML_COMMAND	= "bracketsuml.command",
-		BRACKETSUML_PREVIEW	= "bracketsuml.preview",
+		defaultPlantumlService	= "http://www.plantuml.com/plantuml/png/",
+		BRACKETSUML_COMMAND		= "bracketsuml.command",
+		BRACKETSUML_PREVIEW		= "bracketsuml.preview",
+		Preferences				= {
+									serviceUrl: "plantUMLServiceUrl",
+									loggingEnabled: "loggingEnabled"
+								},
 		loadingImage,
 		panel,
 		editor;
@@ -67,7 +71,7 @@ define(function (require, exports, module) {
 	 * @param {string} msg The title of the book.
 	 */
 	function log(msg) {
-		if (DEBUG) {
+		if (_prefs.get(Preferences.loggingEnabled) === true) {
 			console.log("%c[BracketsUML] " + msg, "color:blue");
 		}
 	}// log(msg)
@@ -96,7 +100,7 @@ define(function (require, exports, module) {
 			name: "PlantUML Diagram",
 			mime: "text/x-plantuml",
 			mode: "plantuml",
-			fileExtensions: ["puml", "wsd"],
+			fileExtensions: ["puml", "wsd", "pseq"],
 			lineComment: ["'"]
 		});
 
@@ -147,7 +151,7 @@ define(function (require, exports, module) {
 	 * @return {string} Full service URL to generate the diagram
 	 */
 	function getEncodedUrl() {
-		return plantumlService + umlEncoder.compress(editor.document.getText());
+		return _prefs.get( Preferences.serviceUrl ) + umlEncoder.compress(editor.document.getText());
 	}
 
 	/**
@@ -306,6 +310,56 @@ define(function (require, exports, module) {
 	}// initPreviewPanel()
 
 	/**
+	 * Sets a default preference value if it doesn't already exist.
+	 * @param {name} string The name of the preference.
+	 * @param {type} string The type of the parameter (string, boolean, etc.)
+	 * @param {value} any The default value for the preference.
+	 * @param {options} object object that specifies the 'name' and 'description' for the preference.
+	 */
+	function setDefaultPreference(name, type, value, options)
+	{
+		var existingPref = _prefs.get(name);
+		log("setDefaultPreferences() > '" + name + "' => " + existingPref);
+
+		if (existingPref === null || existingPref === undefined) {
+			log("setDefaultPreferences() > Adding default '" + name + "' preference");
+
+			_prefs.definePreference(name, type, value, options);
+			_prefs.set(name, value);
+		}
+	}
+
+	/**
+	 * Initializes the default preferences for the extension. This allows users
+	 * to override these default values.
+	 */
+	function initPreferences() {
+		var pref;
+
+		log("BEGIN: initPreferences()");
+
+		// PlantUML service URL
+		setDefaultPreference(
+				Preferences.serviceUrl,
+				"string",
+				defaultPlantumlService,
+				{ name: Preferences.serviceUrl, description: "Sets the URL for the PalntUML service to use" });
+
+		// enable logging (default = false)
+		setDefaultPreference(
+				Preferences.loggingEnabled,
+				"boolean",
+				false,
+				{
+					name: Preferences.loggingEnabled,
+					description: "Enables/disables logging for the extension",
+					values: [true, false]
+				});
+
+		log("END: initPreferences()");
+	}
+
+	/**
 	 * Initializes the extension.
 	 */
 	AppInit.appReady(function () {
@@ -314,6 +368,7 @@ define(function (require, exports, module) {
 		registerLanguage();
 		initPreviewPanel();
 		registerEventListeners();
+		initPreferences();
 		// Add preview menu item
 		CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
 		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
