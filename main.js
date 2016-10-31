@@ -43,53 +43,31 @@ define(function (require, exports, module) {
 		MainViewManager			= brackets.getModule("view/MainViewManager"),
 		Menus					= brackets.getModule("command/Menus"),
 		NodeDomain				= brackets.getModule("utils/NodeDomain"),
-		PrefsManager			= brackets.getModule("preferences/PreferencesManager"),
+		// need to refactor so all preferences go into a seprate module
 		WorkspaceManager		= brackets.getModule("view/WorkspaceManager"),
 
 		Diagram					= new NodeDomain("saveDiagram", ExtensionUtils.getModulePath(module, "node/saveDiagram")),
 
-		plantUmlLang			= require("./lib/plantuml"),
+		plantUmlLang			= require("lib/plantuml"),
 		panelTemplate			= require("text!previewPanel.html"),
-		umlEncoder				= require("./lib/umlEncoder"),
+		umlEncoder				= require("lib/umlEncoder"),
 		loadingImageUrl			= require.toUrl('./images/loading-gray.gif'),
-		_prefs					= PrefsManager.getExtensionPrefs("bracketsuml"),
+		_preferences			= require("lib/userPreferences"),
+		_logger					= require("lib/logging"),
 
-		defaultPlantumlService	= "http://www.plantuml.com/plantuml/png/",
 		BRACKETSUML_COMMAND		= "bracketsuml.command",
 		BRACKETSUML_PREVIEW		= "bracketsuml.preview",
-		Preferences				= {
-									serviceUrl: "plantUMLServiceUrl",
-									loggingEnabled: "loggingEnabled"
-								},
+
 		loadingImage,
 		panel,
 		editor;
 
 
 	/**
-	 * Logging with a little extra flair (ala Chrome)
-	 * @param {string} msg The title of the book.
-	 */
-	function log(msg) {
-		if (_prefs.get(Preferences.loggingEnabled) === true) {
-			console.log("%c[BracketsUML] " + msg, "color:blue");
-		}
-	}// log(msg)
-
-	/**
-	 * Logs the message to the error console.
-	 * @param {string} msg The message to log to the error console.
-	  */
-	function logError(msg) {
-		console.error("[BracketsUML] " + msg);
-	}// logError(msg)
-
-
-	/**
 	 * Registers the PlantUML language syntax
 	 */
 	function registerLanguage() {
-		log("BEGIN: registerLanguage()");
+		_logger.log("BEGIN: registerLanguage()");
 
 		// create a new 'plantuml' language mode in CodeMirror
 		plantUmlLang.register(CodeMirror);
@@ -104,7 +82,7 @@ define(function (require, exports, module) {
 			lineComment: ["'"]
 		});
 
-		log("END: registerLanguage()");
+		_logger.log("END: registerLanguage()");
 	}// registerLanguage()
 
 
@@ -112,30 +90,30 @@ define(function (require, exports, module) {
 	 * Shows the diagram preview panel if not already shown
 	 */
 	function showPreviewPanel() {
-		log("BEGIN: showPreviewPanel()");
+		_logger.log("BEGIN: showPreviewPanel()");
 
 		if (!panel.isVisible()) {
-			log("Showing the preview panel");
+			_logger.log("Showing the preview panel");
 			panel.show();
 			CommandManager.get(BRACKETSUML_COMMAND).setChecked(true);
 		}
 
-		log("END: showPreviewPanel()");
+		_logger.log("END: showPreviewPanel()");
 	}// showPreviewPanel()
 
 	/**
 	 * Hides the diagram preview panel if not already hidden.
 	 */
 	function hidePreviewPanel() {
-		log("BEGIN: hidePreviewPanel()");
+		_logger.log("BEGIN: hidePreviewPanel()");
 
 		if (panel.isVisible()) {
-			log("Hiding the preview panel");
+			_logger.log("Hiding the preview panel");
 			panel.hide();
 			CommandManager.get(BRACKETSUML_COMMAND).setChecked(false);
 		}
 
-		log("END: hidePreviewPanel()");
+		_logger.log("END: hidePreviewPanel()");
 	}//hidePreviewPanel()
 
 	/**
@@ -151,7 +129,7 @@ define(function (require, exports, module) {
 	 * @return {string} Full service URL to generate the diagram
 	 */
 	function getEncodedUrl() {
-		return _prefs.get( Preferences.serviceUrl ) + umlEncoder.compress(editor.document.getText());
+		return _preferences.serviceUrl() + umlEncoder.compress(editor.document.getText());
 	}
 
 	/**
@@ -170,12 +148,12 @@ define(function (require, exports, module) {
 	 * Updates the preview panel image based on the editor contents.
 	 */
 	function updatePanel(filename) {
-		log("BEGIN: updatePanel(editor)");
+		_logger.log("BEGIN: updatePanel(editor)");
 
 		$("img.preview", panel.$panel).attr("src", filename + "?d=" + Date.now());
 		showPreviewPanel();
 
-		log("END: updatePanel()");
+		_logger.log("END: updatePanel()");
 	}// updatePanel()
 
 
@@ -184,26 +162,26 @@ define(function (require, exports, module) {
 	 * @param {Object} jqEvent The jQuery event object.
 	 */
 	function refreshDiagram(jqEvent) {
-		log("BEGIN: refreshDiagram()");
+		_logger.log("BEGIN: refreshDiagram()");
 		loadingImage.show();
 
 		// build the file path
 		var encodedUrl = getEncodedUrl(),
 			filename = FileUtils.convertToNativePath(getImageFilePath());
 
-		log("ENCODED URL: " + encodedUrl);
-		Diagram.exec("save", encodedUrl, filename, PrefsManager.get("proxy"))
+		_logger.log("ENCODED URL: " + encodedUrl);
+		Diagram.exec("save", encodedUrl, filename, _preferences.proxy)
 			.done(function () {
-				log("Diagram successfully saved");
+				_logger.log("Diagram successfully saved");
 
 				updatePanel(filename);
 				loadingImage.hide();
 			}).fail(function (err) {
-				logError("Diagram was not saved properly: " + err);
+				_logger.logError("Diagram was not saved properly: " + err);
 				loadingImage.hide();
 			});
 
-		log("END: refreshDiagram()");
+		_logger.log("END: refreshDiagram()");
 	}// refreshDiagram(jqEvent)
 
 
@@ -213,12 +191,12 @@ define(function (require, exports, module) {
 	 * @param {Document} doc The active document.
 	 */
 	function handleFileSaved(jqEvent, doc) {
-		log("BEGIN: handleFileSaved(jqEvent, doc)");
+		_logger.log("BEGIN: handleFileSaved(jqEvent, doc)");
 
 		console.assert(editor && editor.document === doc);
 		refreshDiagram();
 
-		log("END: handleFileSaved(jqEvent, doc)");
+		_logger.log("END: handleFileSaved(jqEvent, doc)");
 	}//handleFileSaved(jqEvent, doc)
 
 	/**
@@ -258,7 +236,7 @@ define(function (require, exports, module) {
 	 * @param {string} oldPaneId
 	 */
 	function handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId) {
-		log("BEGIN: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
+		_logger.log("BEGIN: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
 
 		var newEditor = EditorManager.getCurrentFullEditor();
 		if (newEditor) {
@@ -278,14 +256,14 @@ define(function (require, exports, module) {
 			hidePreviewPanel();
 		}
 
-		log("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
+		_logger.log("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
 	}// handleCurrentEditorChange()
 
 	/**
 	 * Registers and global event listeners
 	 */
 	function registerEventListeners() {
-		log("BEGIN: registerEventListeners()");
+		_logger.log("BEGIN: registerEventListeners()");
 
 		// listen for changes to the active editor
 		MainViewManager.on("currentFileChange", handleCurrentEditorChange);
@@ -295,7 +273,7 @@ define(function (require, exports, module) {
 		// Refresh file when 'refresh' button clicked
 		panel.$panel.on('click', '.refresh', refreshDiagram);
 
-		log("END: registerEventListeners()");
+		_logger.log("END: registerEventListeners()");
 	}// registerEventListeners()
 
 	/**
@@ -309,72 +287,23 @@ define(function (require, exports, module) {
 		loadingImage.hide();
 	}// initPreviewPanel()
 
-	/**
-	 * Sets a default preference value if it doesn't already exist.
-	 * @param {name} string The name of the preference.
-	 * @param {type} string The type of the parameter (string, boolean, etc.)
-	 * @param {value} any The default value for the preference.
-	 * @param {options} object object that specifies the 'name' and 'description' for the preference.
-	 */
-	function setDefaultPreference(name, type, value, options)
-	{
-		var existingPref = _prefs.get(name);
-		log("setDefaultPreferences() > '" + name + "' => " + existingPref);
-
-		if (existingPref === null || existingPref === undefined) {
-			log("setDefaultPreferences() > Adding default '" + name + "' preference");
-
-			_prefs.definePreference(name, type, value, options);
-			_prefs.set(name, value);
-		}
-	}
-
-	/**
-	 * Initializes the default preferences for the extension. This allows users
-	 * to override these default values.
-	 */
-	function initPreferences() {
-		var pref;
-
-		log("BEGIN: initPreferences()");
-
-		// PlantUML service URL
-		setDefaultPreference(
-				Preferences.serviceUrl,
-				"string",
-				defaultPlantumlService,
-				{ name: Preferences.serviceUrl, description: "Sets the URL for the PalntUML service to use" });
-
-		// enable logging (default = false)
-		setDefaultPreference(
-				Preferences.loggingEnabled,
-				"boolean",
-				false,
-				{
-					name: Preferences.loggingEnabled,
-					description: "Enables/disables logging for the extension",
-					values: [true, false]
-				});
-
-		log("END: initPreferences()");
-	}
 
 	/**
 	 * Initializes the extension.
 	 */
 	AppInit.appReady(function () {
-		log("Initializing...");
+		_logger.log("Initializing...");
 
 		registerLanguage();
 		initPreviewPanel();
 		registerEventListeners();
-		initPreferences();
+		_preferences.initPreferences();
 		// Add preview menu item
 		CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
 		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
 
 		// FUTURE: Add toolbar icon to show/hide panel?
 
-		log("Initialized");
+		_logger.log("Initialized");
 	});
 });
