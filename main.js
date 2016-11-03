@@ -65,7 +65,7 @@ define(function (require, exports, module) {
 	 * Registers the PlantUML language syntax
 	 */
 	function registerLanguage() {
-		_logger.log("BEGIN: registerLanguage()");
+		_logger.debug("BEGIN: registerLanguage()");
 
 		// create a new 'plantuml' language mode in CodeMirror
 		plantUmlLang.register(CodeMirror);
@@ -80,7 +80,7 @@ define(function (require, exports, module) {
 			lineComment: ["'"]
 		});
 
-		_logger.log("END: registerLanguage()");
+		_logger.debug("END: registerLanguage()");
 	}// registerLanguage()
 
 
@@ -88,30 +88,30 @@ define(function (require, exports, module) {
 	 * Shows the diagram preview panel if not already shown
 	 */
 	function showPreviewPanel() {
-		_logger.log("BEGIN: showPreviewPanel()");
+		_logger.debug("BEGIN: showPreviewPanel()");
 
 		if (!panel.isVisible()) {
-			_logger.log("Showing the preview panel");
+			_logger.debug("Showing the preview panel");
 			panel.show();
 			CommandManager.get(_constants.Commands.command).setChecked(true);
 		}
 
-		_logger.log("END: showPreviewPanel()");
+		_logger.debug("END: showPreviewPanel()");
 	}// showPreviewPanel()
 
 	/**
 	 * Hides the diagram preview panel if not already hidden.
 	 */
 	function hidePreviewPanel() {
-		_logger.log("BEGIN: hidePreviewPanel()");
+		_logger.debug("BEGIN: hidePreviewPanel()");
 
 		if (panel.isVisible()) {
-			_logger.log("Hiding the preview panel");
+			_logger.debug("Hiding the preview panel");
 			panel.hide();
 			CommandManager.get(_constants.Commands.command).setChecked(false);
 		}
 
-		_logger.log("END: hidePreviewPanel()");
+		_logger.debug("END: hidePreviewPanel()");
 	}//hidePreviewPanel()
 
 	/**
@@ -146,12 +146,12 @@ define(function (require, exports, module) {
 	 * Updates the preview panel image based on the editor contents.
 	 */
 	function updatePanel(filename) {
-		_logger.log("BEGIN: updatePanel(editor)");
+		_logger.debug("BEGIN: updatePanel(editor)");
 
 		$("img.preview", panel.$panel).attr("src", filename + "?d=" + Date.now());
 		showPreviewPanel();
 
-		_logger.log("END: updatePanel()");
+		_logger.debug("END: updatePanel()");
 	}// updatePanel()
 
 
@@ -160,26 +160,26 @@ define(function (require, exports, module) {
 	 * @param {Object} jqEvent The jQuery event object.
 	 */
 	function refreshDiagram(jqEvent) {
-		_logger.log("BEGIN: refreshDiagram()");
+		_logger.debug("BEGIN: refreshDiagram()");
 		loadingImage.show();
 
 		// build the file path
 		var encodedUrl = getEncodedUrl(),
 			filename = FileUtils.convertToNativePath(getImageFilePath());
 
-		_logger.log("ENCODED URL: " + encodedUrl);
+		_logger.debug("ENCODED URL: " + encodedUrl);
 		Diagram.exec("save", encodedUrl, filename, _preferences.proxy)
 			.done(function () {
-				_logger.log("Diagram successfully saved");
+				_logger.debug("Diagram successfully saved");
 
 				updatePanel(filename);
 				loadingImage.hide();
 			}).fail(function (err) {
-				_logger.logError("Diagram was not saved properly: " + err);
+				_logger.error("Diagram was not saved properly: " + err);
 				loadingImage.hide();
 			});
 
-		_logger.log("END: refreshDiagram()");
+		_logger.debug("END: refreshDiagram()");
 	}// refreshDiagram(jqEvent)
 
 
@@ -189,12 +189,12 @@ define(function (require, exports, module) {
 	 * @param {Document} doc The active document.
 	 */
 	function handleFileSaved(jqEvent, doc) {
-		_logger.log("BEGIN: handleFileSaved(jqEvent, doc)");
+		_logger.debug("BEGIN: handleFileSaved(jqEvent, doc)");
 
 		console.assert(editor && editor.document === doc);
 		refreshDiagram();
 
-		_logger.log("END: handleFileSaved(jqEvent, doc)");
+		_logger.debug("END: handleFileSaved(jqEvent, doc)");
 	}//handleFileSaved(jqEvent, doc)
 
 	/**
@@ -234,7 +234,7 @@ define(function (require, exports, module) {
 	 * @param {string} oldPaneId
 	 */
 	function handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId) {
-		_logger.log("BEGIN: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
+		_logger.debug("BEGIN: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
 
 		var newEditor = EditorManager.getCurrentFullEditor();
 		if (newEditor) {
@@ -254,14 +254,14 @@ define(function (require, exports, module) {
 			hidePreviewPanel();
 		}
 
-		_logger.log("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
+		_logger.debug("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
 	}// handleCurrentEditorChange()
 
 	/**
 	 * Registers and global event listeners
 	 */
 	function registerEventListeners() {
-		_logger.log("BEGIN: registerEventListeners()");
+		_logger.debug("BEGIN: registerEventListeners()");
 
 		// listen for changes to the active editor
 		MainViewManager.on("currentFileChange", handleCurrentEditorChange);
@@ -271,14 +271,14 @@ define(function (require, exports, module) {
 		// Refresh file when 'refresh' button clicked
 		panel.$panel.on('click', '.refresh', refreshDiagram);
 
-		_logger.log("END: registerEventListeners()");
+		_logger.debug("END: registerEventListeners()");
 	}// registerEventListeners()
 
 	/**
 	 * Initializes the preview panel
 	 */
 	function initPreviewPanel() {
-		_logger.log("BEGIN: initPreviewPanel");
+		_logger.debug("BEGIN: initPreviewPanel");
 
 		panel = WorkspaceManager.createBottomPanel(_constants.Commands.preview, $(panelTemplate), 150);
 
@@ -286,7 +286,7 @@ define(function (require, exports, module) {
 		loadingImage.attr('src', loadingImageUrl);
 		loadingImage.hide();
 
-		_logger.log("END: initPreviewPanel");
+		_logger.debug("END: initPreviewPanel");
 	}// initPreviewPanel()
 
 
@@ -294,7 +294,7 @@ define(function (require, exports, module) {
 	 * Initializes the extension.
 	 */
 	AppInit.appReady(function () {
-		_logger.log("Initializing...");
+			("Initializing...");
 
 		registerLanguage();
 		initPreviewPanel();
@@ -306,6 +306,6 @@ define(function (require, exports, module) {
 
 		// FUTURE: Add toolbar icon to show/hide panel?
 
-		_logger.log("Initialized");
+		_logger.debug("Initialized");
 	});
 });
