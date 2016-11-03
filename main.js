@@ -54,9 +54,7 @@ define(function (require, exports, module) {
 		loadingImageUrl			= require.toUrl('./images/loading-gray.gif'),
 		_preferences			= require("lib/userPreferences"),
 		_logger					= require("lib/logging"),
-
-		BRACKETSUML_COMMAND		= "bracketsuml.command",
-		BRACKETSUML_PREVIEW		= "bracketsuml.preview",
+		_constants				= require("lib/constants"),
 
 		loadingImage,
 		panel,
@@ -95,7 +93,7 @@ define(function (require, exports, module) {
 		if (!panel.isVisible()) {
 			_logger.log("Showing the preview panel");
 			panel.show();
-			CommandManager.get(BRACKETSUML_COMMAND).setChecked(true);
+			CommandManager.get(_constants.Commands.command).setChecked(true);
 		}
 
 		_logger.log("END: showPreviewPanel()");
@@ -110,7 +108,7 @@ define(function (require, exports, module) {
 		if (panel.isVisible()) {
 			_logger.log("Hiding the preview panel");
 			panel.hide();
-			CommandManager.get(BRACKETSUML_COMMAND).setChecked(false);
+			CommandManager.get(_constants.Commands.command).setChecked(false);
 		}
 
 		_logger.log("END: hidePreviewPanel()");
@@ -214,15 +212,15 @@ define(function (require, exports, module) {
 	 * Enables the 'Preview' menu command for showing/hiding the preview panel.
 	 */
 	function enableMenuCommand() {
-		CommandManager.get(BRACKETSUML_COMMAND).setEnabled(true);
+		CommandManager.get(_constants.Commands.command).setEnabled(true);
 	}// enableMenuCommand()
 
 	/**
 	 * Disables the  'Preview' menu command for showing/hiding the preview panel.
 	 */
 	function disableMenuCommand() {
-		if (CommandManager.get(BRACKETSUML_COMMAND) !== undefined) {
-			CommandManager.get(BRACKETSUML_COMMAND).setEnabled(false);
+		if (CommandManager.get(_constants.Commands.command) !== undefined) {
+			CommandManager.get(_constants.Commands.command).setEnabled(false);
 		}
 	}// disableMenuCommand()
 
@@ -280,11 +278,15 @@ define(function (require, exports, module) {
 	 * Initializes the preview panel
 	 */
 	function initPreviewPanel() {
-		panel = WorkspaceManager.createBottomPanel(BRACKETSUML_PREVIEW, $(panelTemplate), 150);
+		_logger.log("BEGIN: initPreviewPanel");
+
+		panel = WorkspaceManager.createBottomPanel(_constants.Commands.preview, $(panelTemplate), 150);
 
 		loadingImage = $("img.loading", panel.$panel);
 		loadingImage.attr('src', loadingImageUrl);
 		loadingImage.hide();
+
+		_logger.log("END: initPreviewPanel");
 	}// initPreviewPanel()
 
 
@@ -299,8 +301,8 @@ define(function (require, exports, module) {
 		registerEventListeners();
 		_preferences.initPreferences();
 		// Add preview menu item
-		CommandManager.register("BracketsUML Preview Panel", BRACKETSUML_COMMAND, handleShowHideCommand);
-		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(BRACKETSUML_COMMAND);
+		CommandManager.register("BracketsUML Preview Panel", _constants.Commands.command, handleShowHideCommand);
+		Menus.getMenu(Menus.AppMenuBar.VIEW_MENU).addMenuItem(_constants.Commands.command);
 
 		// FUTURE: Add toolbar icon to show/hide panel?
 
