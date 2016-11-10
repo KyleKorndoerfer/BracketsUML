@@ -1,7 +1,15 @@
 # Changelog
 
-Running list of all notable changes to `BraketsUML` will be listed here (most
-recent to oldest).
+Running list of all notable changes to the `BracketsUML` extension will be listed
+here (most recent to oldest).
+
+## 1.3.0 - 2016-11-10
+
+### Added
+- [Issue #16](https://github.com/KyleKorndoerfer/BracketsUML/issues/16) - Added basic support (no syntax highlighting) for other PlantUML diagram types.
+
+### Fixed
+- Refactored the base code to make better use of modules and allow for easier updates in the future.
 
 ## 1.2.0 - 2016-10-20
 
