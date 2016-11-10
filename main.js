@@ -33,22 +33,19 @@ define(function (require, exports, module) {
 
 	var
 		AppInit					= brackets.getModule("utils/AppInit"),
-		CodeMirror				= brackets.getModule("thirdparty/CodeMirror2/lib/codemirror"),
 		CommandManager			= brackets.getModule("command/CommandManager"),
 		DocumentManager			= brackets.getModule("document/DocumentManager"),
 		EditorManager			= brackets.getModule("editor/EditorManager"),
 		ExtensionUtils			= brackets.getModule("utils/ExtensionUtils"),
 		FileUtils				= brackets.getModule("file/FileUtils"),
-		LanguageManager			= brackets.getModule("language/LanguageManager"),
 		MainViewManager			= brackets.getModule("view/MainViewManager"),
 		Menus					= brackets.getModule("command/Menus"),
 		NodeDomain				= brackets.getModule("utils/NodeDomain"),
-		// need to refactor so all preferences go into a seprate module
 		WorkspaceManager		= brackets.getModule("view/WorkspaceManager"),
 
 		Diagram					= new NodeDomain("saveDiagram", ExtensionUtils.getModulePath(module, "node/saveDiagram")),
 
-		plantUmlLang			= require("lib/plantuml"),
+		_plantUml				= require("lib/plantuml"),
 		panelTemplate			= require("text!previewPanel.html"),
 		umlEncoder				= require("lib/umlEncoder"),
 		loadingImageUrl			= require.toUrl('./images/loading-gray.gif'),
@@ -59,29 +56,6 @@ define(function (require, exports, module) {
 		loadingImage,
 		panel,
 		editor;
-
-
-	/**
-	 * Registers the PlantUML language syntax
-	 */
-	function registerLanguage() {
-		_logger.debug("BEGIN: registerLanguage()");
-
-		// create a new 'plantuml' language mode in CodeMirror
-		plantUmlLang.register(CodeMirror);
-
-		// register the 'wsd' file extension/language
-		// (simple for the moment; syntax highlighting coming later)
-		LanguageManager.defineLanguage("plantuml", {
-			name: "PlantUML Diagram",
-			mime: "text/x-plantuml",
-			mode: "plantuml",
-			fileExtensions: ["puml", "wsd", "pseq"],
-			lineComment: ["'"]
-		});
-
-		_logger.debug("END: registerLanguage()");
-	}// registerLanguage()
 
 
 	/**
@@ -164,8 +138,8 @@ define(function (require, exports, module) {
 		loadingImage.show();
 
 		// build the file path
-		var encodedUrl = getEncodedUrl(),
-			filename = FileUtils.convertToNativePath(getImageFilePath());
+		var encodedUrl	= getEncodedUrl(),
+			filename	= FileUtils.convertToNativePath(getImageFilePath());
 
 		_logger.debug("ENCODED URL: " + encodedUrl);
 		Diagram.exec("save", encodedUrl, filename, _preferences.proxy)
@@ -238,7 +212,8 @@ define(function (require, exports, module) {
 
 		var newEditor = EditorManager.getCurrentFullEditor();
 		if (newEditor) {
-			if (newEditor.document.getLanguage().getId() === "plantuml") {
+			var docLanguageId = newEditor.document.getLanguage().getId();
+			if (docLanguageId.startsWith("plantuml")) {
 				DocumentManager.on("documentSaved", handleFileSaved);
 				editor = newEditor;
 				enableMenuCommand();
@@ -294,9 +269,9 @@ define(function (require, exports, module) {
 	 * Initializes the extension.
 	 */
 	AppInit.appReady(function () {
-			("Initializing...");
+		_logger.debug("Initializing...");
 
-		registerLanguage();
+		_plantUml.registerLanguages();	// register the PlantUML dialects
 		initPreviewPanel();
 		registerEventListeners();
 		_preferences.initPreferences();
