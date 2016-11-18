@@ -29,5 +29,6 @@ enum TimeUnit {
 }
 
 annotation SuppressWarnings
+note bottom of SuppressWarnings : This is a note!
 
 @enduml

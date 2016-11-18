@@ -22,9 +22,6 @@
  * SOFTWARE.
  */
 
-/*jslint vars: true, plusplus: true, devel: true, nomen: true, regexp: true, indent: 4, maxerr: 50 */
-/*global define, Mustache, $, brackets, window */
-
 /**
  * Extension that adds support for generating PlantUML diagrams.
  */
@@ -62,7 +59,7 @@ define(function (require, exports, module) {
 	 * Shows the diagram preview panel if not already shown
 	 */
 	function showPreviewPanel() {
-		_logger.debug("BEGIN: showPreviewPanel()");
+		_logger.group("showPreviewPanel()");
 
 		if (!panel.isVisible()) {
 			_logger.debug("Showing the preview panel");
@@ -70,14 +67,14 @@ define(function (require, exports, module) {
 			CommandManager.get(_constants.Commands.command).setChecked(true);
 		}
 
-		_logger.debug("END: showPreviewPanel()");
+		_logger.endGroup();
 	}// showPreviewPanel()
 
 	/**
 	 * Hides the diagram preview panel if not already hidden.
 	 */
 	function hidePreviewPanel() {
-		_logger.debug("BEGIN: hidePreviewPanel()");
+		_logger.group("hidePreviewPanel()");
 
 		if (panel.isVisible()) {
 			_logger.debug("Hiding the preview panel");
@@ -85,7 +82,7 @@ define(function (require, exports, module) {
 			CommandManager.get(_constants.Commands.command).setChecked(false);
 		}
 
-		_logger.debug("END: hidePreviewPanel()");
+		_logger.endGroup();
 	}//hidePreviewPanel()
 
 	/**
@@ -120,12 +117,12 @@ define(function (require, exports, module) {
 	 * Updates the preview panel image based on the editor contents.
 	 */
 	function updatePanel(filename) {
-		_logger.debug("BEGIN: updatePanel(editor)");
+		_logger.group("updatePanel(filename)");
 
 		$("img.preview", panel.$panel).attr("src", filename + "?d=" + Date.now());
 		showPreviewPanel();
 
-		_logger.debug("END: updatePanel()");
+		_logger.endGroup("updatePanel()");
 	}// updatePanel()
 
 
@@ -134,7 +131,7 @@ define(function (require, exports, module) {
 	 * @param {Object} jqEvent The jQuery event object.
 	 */
 	function refreshDiagram(jqEvent) {
-		_logger.debug("BEGIN: refreshDiagram()");
+		_logger.group("refreshDiagram()");
 		loadingImage.show();
 
 		// build the file path
@@ -153,7 +150,7 @@ define(function (require, exports, module) {
 				loadingImage.hide();
 			});
 
-		_logger.debug("END: refreshDiagram()");
+		_logger.endGroup();
 	}// refreshDiagram(jqEvent)
 
 
@@ -163,12 +160,12 @@ define(function (require, exports, module) {
 	 * @param {Document} doc The active document.
 	 */
 	function handleFileSaved(jqEvent, doc) {
-		_logger.debug("BEGIN: handleFileSaved(jqEvent, doc)");
+		_logger.group("handleFileSaved(jqEvent, doc)");
 
 		console.assert(editor && editor.document === doc);
 		refreshDiagram();
 
-		_logger.debug("END: handleFileSaved(jqEvent, doc)");
+		_logger.endGroup();
 	}//handleFileSaved(jqEvent, doc)
 
 	/**
@@ -208,7 +205,7 @@ define(function (require, exports, module) {
 	 * @param {string} oldPaneId
 	 */
 	function handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId) {
-		_logger.debug("BEGIN: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
+		_logger.group("handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
 
 		var newEditor = EditorManager.getCurrentFullEditor();
 		if (newEditor) {
@@ -229,14 +226,14 @@ define(function (require, exports, module) {
 			hidePreviewPanel();
 		}
 
-		_logger.debug("END: handleCurrentEditorChange(jqEvent, newFile, newPaneId, oldFile, oldPaneId)");
+		_logger.endGroup();
 	}// handleCurrentEditorChange()
 
 	/**
 	 * Registers and global event listeners
 	 */
 	function registerEventListeners() {
-		_logger.debug("BEGIN: registerEventListeners()");
+		_logger.group("registerEventListeners()");
 
 		// listen for changes to the active editor
 		MainViewManager.on("currentFileChange", handleCurrentEditorChange);
@@ -246,14 +243,14 @@ define(function (require, exports, module) {
 		// Refresh file when 'refresh' button clicked
 		panel.$panel.on('click', '.refresh', refreshDiagram);
 
-		_logger.debug("END: registerEventListeners()");
+		_logger.endGroup();
 	}// registerEventListeners()
 
 	/**
 	 * Initializes the preview panel
 	 */
 	function initPreviewPanel() {
-		_logger.debug("BEGIN: initPreviewPanel");
+		_logger.group("initPreviewPanel()");
 
 		panel = WorkspaceManager.createBottomPanel(_constants.Commands.preview, $(panelTemplate), 150);
 
@@ -261,7 +258,7 @@ define(function (require, exports, module) {
 		loadingImage.attr('src', loadingImageUrl);
 		loadingImage.hide();
 
-		_logger.debug("END: initPreviewPanel");
+		_logger.endGroup();
 	}// initPreviewPanel()
 
 
@@ -269,7 +266,7 @@ define(function (require, exports, module) {
 	 * Initializes the extension.
 	 */
 	AppInit.appReady(function () {
-		_logger.debug("Initializing...");
+		_logger.group("Initializing...");
 
 		_plantUml.registerLanguages();	// register the PlantUML dialects
 		initPreviewPanel();
@@ -281,6 +278,6 @@ define(function (require, exports, module) {
 
 		// FUTURE: Add toolbar icon to show/hide panel?
 
-		_logger.debug("Initialized");
+		_logger.endGroup();
 	});
 });
